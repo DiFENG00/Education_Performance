@@ -1,0 +1,34 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from pyecharts.charts import Bar
+from pyecharts import options as opts
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+df_score = pd.read_csv("5_chengji.csv")
+df_stuInfo = pd.read_csv("2_student_info.csv")
+# dropping rows with no scores and non-subject name
+df_score.dropna(inplace=True)
+# transfer subject name from Chinese into English
+dictSubject = { "体育":"PE", "化学":"Chemistry", "历史":"History", "地理":"Geography", "技术":"Technics",
+                "政治" : "Politics", "数学":"Mathematics", "物理":"Physics", "生物":"Biology", "美术":"Art","英语":"English",
+                "语文":"Chinese", "音乐":"Music","1B模块总分":"General review"}
+df_score["mes_sub_name"].replace(dictSubject, inplace=True)
+
+# add new columns "exam_year"
+df_score["exam_date"] = pd.to_datetime(df_score["exam_sdate"],infer_datetime_format=True)
+df_score["exam_year"] = df_score["exam_date"].dt.year
+df_score["exam_year"].sort_values()
+df_score.groupby(["exam_year"]).apply(lambda x: x.sort_values("mes_T_Score")).reset_index(drop=True)
+
+# plot the std & median of each subject in 2016
+df_score2016 = df_score[df_score["exam_year"] == 2016]
+df_des_2016 = df_score2016.groupby(["mes_sub_name"])["mes_T_Score"].describe()
+df_exam_show_2016 = df_des_2016[["std", "min", "25%", "75%"]]
+
+median = df_score2016.groupby(["mes_sub_name"])["mes_T_Score"].median()
+df_exam_show_2016["median"] =median.values
+print(df_exam_show_2016.head(5))
+df_exam_show_2016.plot(kind="bar", figsize=(18, 90))
+plt.show()
